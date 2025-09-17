@@ -2,10 +2,10 @@ task=lexical_constrained_retrieve_and_rerank
 experiment_dir=experiments-full-lexical-ripor
 
 # datasets for evaluation
-data_root_dir=./data/msmarco-full
-collection_path=$data_root_dir/full_collection/
-q_collection_paths='["./data/msmarco-full/TREC_DL_2019/queries_2019/","./data/msmarco-full/TREC_DL_2020/queries_2020/","./data/msmarco-full/dev_queries/"]'
-eval_qrel_path='["./data/msmarco-full/dev_qrel.json","./data/msmarco-full/TREC_DL_2019/qrel.json","./data/msmarco-full/TREC_DL_2019/qrel_binary.json","./data/msmarco-full/TREC_DL_2020/qrel.json","./data/msmarco-full/TREC_DL_2020/qrel_binary.json"]'
+data_root_dir=./data/limit-formatted
+collection_path=$data_root_dir/corpus/
+q_collection_paths='["./data/limit-formatted/queries/"]'
+eval_qrel_path='["./data/limit-formatted/queries/qrel.json"]'
 
 if [ $task = "constrained_beam_search_for_qid_rankdata" ]; then 
     echo "task: $task"
