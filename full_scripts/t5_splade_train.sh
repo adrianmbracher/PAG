@@ -3,7 +3,7 @@ task=t5seq_aq_encoder_seq2seq
 experiment_dir=experiments-splade
 
 # train 
-collection_path=./data/msmarco-full/full_collection/
+collection_path=./limit_formatted/limit/corpus
 queries_path=./data/msmarco/train_queries/labeled_queries
 teacher_score_path=./data/msmarco/hard_negatives_scores/qrel_added_teacher_scores.json
 

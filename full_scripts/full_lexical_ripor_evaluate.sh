@@ -2,10 +2,10 @@ task=lexical_constrained_retrieve_and_rerank
 experiment_dir=experiments-full-lexical-ripor
 
 # datasets for evaluation
-data_root_dir=./data/limit-formatted
+data_root_dir=./limit-formatted/limit
 collection_path=$data_root_dir/corpus/
-q_collection_paths='["./data/limit-formatted/queries/"]'
-eval_qrel_path='["./data/limit-formatted/queries/qrel.json"]'
+q_collection_paths='["./limit-formatted/limit/queries/"]'
+eval_qrel_path='["./limit-formatted/limit/queries/qrel.json"]'
 
 if [ $task = "constrained_beam_search_for_qid_rankdata" ]; then 
     echo "task: $task"
