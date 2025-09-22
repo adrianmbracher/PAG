@@ -2,21 +2,33 @@ import gzip
 import json
 import pickle
 
+QUERIES_PATH = "./limit/limit-custom/queries.jsonl"
+TRAINING_QUERIES_PATH = "./limit/limit-custom/queries-train.jsonl"
+CORPUS_PATH = "./limit/limit-custom/corpus.jsonl"
+QRELS_PATH = "./limit/limit-custom/qrels.jsonl"
+
+training_queries = 800
+
 if __name__ == "__main__":
     # Convert limit queries to msmarco tsv format
-    with open("./limit/limit/queries.jsonl", "r") as infile, open("./limit_formatted/limit/queries/raw.tsv", "w") as outfile:
+    with open(QUERIES_PATH, "r") as infile, open("./limit_formatted/limit/queries/raw.tsv", "w") as outfile:
+        for line in infile:
+            data = json.loads(line)
+            outfile.write(f"{data['_id']}\t{data['text']}\n")
+
+    with open(TRAINING_QUERIES_PATH, "r") as infile, open("./limit_formatted/limit/train_queries/raw.tsv", "w") as outfile:
         for line in infile:
             data = json.loads(line)
             outfile.write(f"{data['_id']}\t{data['text']}\n")
 
     # Convert limit corpus to msmarco tsv format
-    with open("./limit/limit/corpus.jsonl", "r") as infile, open("./limit_formatted/limit/corpus/raw.tsv", "w") as outfile:
+    with open(CORPUS_PATH, "r") as infile, open("./limit_formatted/limit/corpus/raw.tsv", "w") as outfile:
         for line in infile:
             data = json.loads(line)
             outfile.write(f"{data['_id']}\t{data['text']}\n")
 
     # Convert limit qrels to msmarco tsv format
-    with open("./limit/limit/qrels.jsonl", "r") as infile, open("./limit_formatted/limit/queries/qrel.json", "w") as outfile:
+    with open(QRELS_PATH, "r") as infile, open("./limit_formatted/limit/queries/qrel.json", "w") as outfile:
         qrels = {}
         for line in infile:
             data = json.loads(line)
@@ -33,7 +45,7 @@ if __name__ == "__main__":
     from sentence_transformers import CrossEncoder
 
     model = CrossEncoder('cross-encoder/ms-marco-MiniLM-L6-v2')
-    with open("./limit/limit/queries.jsonl", "r") as queriesfile, open("./limit/limit/corpus.jsonl", "r") as corpusfile:
+    with open(TRAINING_QUERIES_PATH, "r") as queriesfile, open(CORPUS_PATH, "r") as corpusfile:
         qid_to_rerank = {}
         docids = []
         texts = []
@@ -47,8 +59,7 @@ if __name__ == "__main__":
             qid = qentry["_id"]
             qid_to_rerank[qentry["_id"]] = {}
             prediction_inputs = [(qentry["text"], text) for text in texts]
-
-            scores = model.predict(prediction_inputs, batch_size=256, show_progress_bar=True)
+            scores = model.predict(prediction_inputs, show_progress_bar=True)
             qid_to_rerank[qid] = {docid: float(score) for docid, score in zip(docids, scores)}
         with gzip.open("./limit_formatted/limit/hard_negatives_scores/cross-encoder-ms-marco-MiniLM-L-6-v2-scores.pkl.gz", "wb") as outfile:
             pickle.dump(qid_to_rerank, outfile)
