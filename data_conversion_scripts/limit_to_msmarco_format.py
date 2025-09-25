@@ -43,23 +43,33 @@ if __name__ == "__main__":
 
     # create teacher scores
     from sentence_transformers import CrossEncoder
+    from multiprocessing import Pool
+
+    pool = Pool()
 
     model = CrossEncoder('cross-encoder/ms-marco-MiniLM-L6-v2')
     with open(TRAINING_QUERIES_PATH, "r") as queriesfile, open(CORPUS_PATH, "r") as corpusfile:
-        qid_to_rerank = {}
+
         docids = []
         texts = []
         for cline in corpusfile:
             centry = json.loads(cline)
             docids.append(centry["_id"])
             texts.append(centry["text"])
+        qids = []
         for qline in queriesfile:
             qentry = json.loads(qline)
             print(qentry)
             qid = qentry["_id"]
-            qid_to_rerank[qentry["_id"]] = {}
+            qids.append(qid)
             prediction_inputs = [(qentry["text"], text) for text in texts]
             scores = model.predict(prediction_inputs, show_progress_bar=True)
-            qid_to_rerank[qid] = {docid: float(score) for docid, score in zip(docids, scores)}
-        with gzip.open("./limit_formatted/limit/hard_negatives_scores/cross-encoder-ms-marco-MiniLM-L-6-v2-scores.pkl.gz", "wb") as outfile:
+            #qid_to_rerank[qid] = {docid: float(score) for docid, score in zip(docids, scores)}
+            with gzip.open(f"./limit_formatted/limit/hard_negatives_scores/partial-{qid}.pkl.gz", "xb") as outfile:
+                pickle.dump({qid: {docid: float(score) for docid, score in zip(docids, scores)}}, outfile)
+        with gzip.open("./limit_formatted/limit/hard_negatives_scores/cross-encoder-ms-marco-MiniLM-L-6-v2-scores.pkl.gz", "xb") as outfile:
+            qid_to_rerank = {}
+            for qid in qids:
+                with open(f"./limit_formatted/limit/hard_negatives_scores/partial-{qid}.json", "rb") as qin:
+                    qid_to_rerank = qid_to_rerank.join(pickle.load(qin))
             pickle.dump(qid_to_rerank, outfile)
