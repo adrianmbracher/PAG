@@ -195,7 +195,7 @@ class EvalArguments:
 class RerankArguments:
     collection_path: str = field(default="./data/data/msmarco/full_collection")
     out_dir: str = field(default="")
-    model_name_or_path: str = field(default="cross-encoder/ms-marco-MiniLM-L-6-v2")
+    model_name_or_path: str = field(default="/home/abracher/.cache/huggingface/hub/models--cross-encoder--ms-marco-MiniLM-L6-v2/snapshots/c5ee24cb16019beea0893ab7796b1df96625c6b8")
     max_length: int = field(default=256)
     batch_size: int = field(default=64)
     #q_collection_paths: List[str] = field(default_factory=lambda: [

@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     pool = Pool()
 
-    model = CrossEncoder('cross-encoder/ms-marco-MiniLM-L6-v2')
+    model = CrossEncoder('/home/abracher/.cache/huggingface/hub/models--cross-encoder--ms-marco-MiniLM-L6-v2/snapshots/c5ee24cb16019beea0893ab7796b1df96625c6b8')
     with open(TRAINING_QUERIES_PATH, "r") as queriesfile, open(CORPUS_PATH, "r") as corpusfile:
 
         docids = []
