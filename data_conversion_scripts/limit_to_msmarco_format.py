@@ -1,5 +1,6 @@
 import gzip
 import json
+import os
 import pickle
 
 QUERIES_PATH = "./limit/limit-custom/queries.jsonl"
@@ -62,11 +63,13 @@ if __name__ == "__main__":
             print(qentry)
             qid = qentry["_id"]
             qids.append(qid)
-            prediction_inputs = [(qentry["text"], text) for text in texts]
-            scores = model.predict(prediction_inputs, show_progress_bar=True)
-            #qid_to_rerank[qid] = {docid: float(score) for docid, score in zip(docids, scores)}
-            with gzip.open(f"./limit_formatted/limit/hard_negatives_scores/partial-{qid}.pkl.gz", "xb") as outfile:
-                pickle.dump({qid: {docid: float(score) for docid, score in zip(docids, scores)}}, outfile)
+            # check if file exists already
+            if not os.path.isfile(f"./limit_formatted/limit/hard_negatives_scores/partial-{qid}.pkl.gz"):
+                prediction_inputs = [(qentry["text"], text) for text in texts]
+                scores = model.predict(prediction_inputs, show_progress_bar=True)
+                #qid_to_rerank[qid] = {docid: float(score) for docid, score in zip(docids, scores)}
+                with gzip.open(f"./limit_formatted/limit/hard_negatives_scores/partial-{qid}.pkl.gz", "xb") as outfile:
+                    pickle.dump({qid: {docid: float(score) for docid, score in zip(docids, scores)}}, outfile)
         with gzip.open("./limit_formatted/limit/hard_negatives_scores/cross-encoder-ms-marco-MiniLM-L-6-v2-scores.pkl.gz", "xb") as outfile:
             qid_to_rerank = {}
             for qid in qids:
