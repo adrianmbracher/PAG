@@ -78,7 +78,7 @@ class Arguments:
 
     def __post_init__(self):
         self.output_dir = os.path.join(self.output_dir, self.run_name, "checkpoint")
-        if self.local_rank <= 0:
+        if int(os.environ['LOCAL_RANK']) <= 0:
             os.makedirs(self.output_dir, exist_ok=True)
 
         if isinstance(self.task_names, list):

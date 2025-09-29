@@ -98,7 +98,7 @@ class Reranker:
             with torch.no_grad():
                 with torch.cuda.amp.autocast(enabled=use_fp16):
                     inputs = {"tokenized_query": self.kwargs_to_cuda(batch["tokenized_query"]),
-                     "labels": batch["labels"].to(self.local_rank)}
+                     "labels": batch["labels"].to(int(os.environ['LOCAL_RANK']))}
                     if hasattr(self.model, "module"):
                         scores = self.model.module.get_query_smtids_score(**inputs) #[bz, seq_len]
                     else:
@@ -131,7 +131,7 @@ class Reranker:
                     inputs = {
                         "tokenized_query": self.kwargs_to_cuda(batch["tokenized_query"]),
                         "tokenized_doc": self.kwargs_to_cuda(batch["tokenized_doc"])}
-                    inputs["prev_smtids"] = batch["prev_smtids"].to(self.local_rank)
+                    inputs["prev_smtids"] = batch["prev_smtids"].to(int(os.environ['LOCAL_RANK']))
                     if hasattr(self.model, "module"):
                         scores = self.model.module.cond_prev_smtid_query_doc_score(**inputs) #[bz, seq_len]
                     else:
@@ -157,7 +157,7 @@ class Reranker:
     def assign_scores_for_pseudo_queries(self, name=None, is_biencoder=False, use_fp16=True, run_json_output=True):
         all_pair_ids = []
         all_scores = []
-        for i, batch in tqdm(enumerate(self.dataloader), total=len(self.dataloader), disable=self.local_rank>0):
+        for i, batch in tqdm(enumerate(self.dataloader), total=len(self.dataloader), disable=int(os.environ['LOCAL_RANK'])>0):
             with torch.no_grad():
                 with torch.cuda.amp.autocast(enabled=use_fp16):
                     qd_kwargs = self.kwargs_to_cuda(batch["qd_kwargs"])
@@ -187,8 +187,8 @@ class Reranker:
     def kwargs_to_cuda(self, input_kwargs):
         assert isinstance(input_kwargs, BatchEncoding) or isinstance(input_kwargs, dict), (type(input_kwargs))
         
-        if self.local_rank != -1:
-            return {k:v.to(self.local_rank) for k, v in input_kwargs.items()}
+        if int(os.environ['LOCAL_RANK']) != -1:
+            return {k:v.to(int(os.environ['LOCAL_RANK'])) for k, v in input_kwargs.items()}
         else:
             return {k:v.cuda() for k, v in input_kwargs.items()}
     
