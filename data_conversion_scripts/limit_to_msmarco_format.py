@@ -29,7 +29,9 @@ if __name__ == "__main__":
             outfile.write(f"{data['_id']}\t{data['text']}\n")
 
     # Convert limit qrels to msmarco tsv format
-    with open(QRELS_PATH, "r") as infile, open("./limit_formatted/limit/queries/qrel.json", "w") as outfile:
+    with (open(QRELS_PATH, "r") as infile,
+          open("./limit_formatted/limit/queries/qrel.json", "w") as outfile,
+          open("./limit_formatted/limit/train_queries/qrels.json", "w") as train_outfile):
         qrels = {}
         for line in infile:
             data = json.loads(line)
@@ -39,6 +41,8 @@ if __name__ == "__main__":
 
         # create json file with query_id and corpus_id:score mapping
         json.dump(qrels, outfile)
+        qrels = {k: v for k, v in qrels.items() if int(k[6:]) < 800}
+        json.dump(qrels, train_outfile)
 
 
 
