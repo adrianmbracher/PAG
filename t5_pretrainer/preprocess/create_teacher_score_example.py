@@ -15,7 +15,7 @@ new_qid_to_rerank = {}
 for qid in tqdm(qid_to_rerank, total=len(qid_to_rerank)):
     qid = str(qid)
     new_qid_to_rerank[qid] = {}
-    for docid, score in qid_to_rerank[int(qid)].items():
+    for docid, score in qid_to_rerank[qid].items():
         new_qid_to_rerank[qid][str(docid)] = float(score)
 
 qid_to_rerank = new_qid_to_rerank
