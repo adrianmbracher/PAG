@@ -4,10 +4,10 @@ experiment_dir=experiments-splade
 
 # train 
 collection_path=./limit_formatted/limit/corpus
-queries_path=./data/msmarco/train_queries/labeled_queries
-teacher_score_path=./data/msmarco/hard_negatives_scores/qrel_added_teacher_scores.json
+queries_path=./limit_formatted/limit/train_queries
+teacher_score_path=./limit_formatted/limit/hard_negatives_scores/qrel_added_teacher_scores.json
 
-output_dir="./data/$experiment_dir/"
+output_dir="./limit_formatted/$experiment_dir/"
 pretrained_path="t5-base"
 run_name="t5-splade-0-12l"
 
