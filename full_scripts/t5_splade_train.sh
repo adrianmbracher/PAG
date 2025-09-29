@@ -22,7 +22,7 @@ run_name="t5-splade-0-12l"
 echo $teacher_score_path
 
 python -m torch.distributed.launch --nproc_per_node=8 -m t5_pretrainer.main \
-        --max_steps=200_000 \
+        --max_steps=5_000 \
         --run_name=$run_name \
         --learning_rate=5e-4 \
         --loss_type=margin_mse \
