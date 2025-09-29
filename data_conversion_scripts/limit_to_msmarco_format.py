@@ -74,5 +74,5 @@ if __name__ == "__main__":
             qid_to_rerank = {}
             for qid in qids:
                 with open(f"./limit_formatted/limit/hard_negatives_scores/partial-{qid}.pkl.gz", "rb") as qin:
-                    qid_to_rerank = qid_to_rerank.join(pickle.load(qin))
+                    qid_to_rerank = qid_to_rerank | pickle.load(qin)
             pickle.dump(qid_to_rerank, outfile)
