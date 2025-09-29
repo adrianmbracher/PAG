@@ -73,6 +73,7 @@ if __name__ == "__main__":
         with gzip.open("./limit_formatted/limit/hard_negatives_scores/cross-encoder-ms-marco-MiniLM-L-6-v2-scores.pkl.gz", "wb") as outfile:
             qid_to_rerank = {}
             for qid in qids:
-                with open(f"./limit_formatted/limit/hard_negatives_scores/partial-{qid}.pkl.gz", "rb") as qin:
+                print(qid)
+                with gzip.open(f"./limit_formatted/limit/hard_negatives_scores/partial-{qid}.pkl.gz", "rb") as qin:
                     qid_to_rerank = qid_to_rerank | pickle.load(qin)
             pickle.dump(qid_to_rerank, outfile)
