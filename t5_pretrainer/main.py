@@ -112,9 +112,9 @@ def initialize_splade_evaluator(model, args, model_args):
 def main():
     parser = HfArgumentParser((ModelArguments, Arguments))
     model_args, args = parser.parse_args_into_dataclasses()
-    args.local_rank = int(os.environ['LOCAL_RANK'])
+    local_rank = int(os.environ['LOCAL_RANK'])
     # save args to disk 
-    if args.local_rank <= 0:
+    if local_rank <= 0:
         merged_args = {**asdict(model_args), **asdict(args)}
         out_dir = deepcopy(args.output_dir)
         if not os.path.exists(out_dir):
