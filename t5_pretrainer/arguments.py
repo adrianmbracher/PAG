@@ -50,7 +50,6 @@ class Arguments:
     logging_steps: int = field(default=50)
     max_steps: int = field(default=-1)
     epochs: int = field(default=3)
-    local_rank: int = field(default=-1)
     task_names: Optional[str] = field(default=None)
     ln_to_weight: Dict[str, float] = field(default_factory=lambda:   {"rank": 1.0, "commit": 1.0, "reg": 0.2}) # {"rank": 1.0, "reg": 0.002} | {"rank": 1.0, "commit": 1.0, "reg": 0.002} | {"rank": 1.0, "commit": 1.0} | {"rank": 1.0}
     multi_weights: Optional[List] = field(default=None)
