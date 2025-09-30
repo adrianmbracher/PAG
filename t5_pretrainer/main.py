@@ -323,7 +323,7 @@ def main():
     
     
     if training_args.local_rank <= 0:  # only on main process
-        wandb.login()
+        wandb.login(key="5e4c616ff1294c44ba65fdafab6a3512fd6eb349")
         wandb.init(project=args.wandb_project_name, name=args.run_name)
     
     # Let's save the tokenizer first 
