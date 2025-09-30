@@ -5,7 +5,7 @@ experiment_dir=experiments-splade
 
 export CUDA_VISIBLE_DEVICES=0
 model_dir="./limit_formatted/$experiment_dir/t5-splade-0-12l"
-pretrained_path=$model_dir/checkpoint
+pretrained_path=$model_dir/checkpoint/checkpoint-100000
 
 out_dir=$model_dir/top_bow
 
