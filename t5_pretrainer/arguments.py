@@ -50,7 +50,6 @@ class Arguments:
     logging_steps: int = field(default=50)
     max_steps: int = field(default=-1)
     epochs: int = field(default=3)
-    local_rank: int = field(default=-1)
     task_names: Optional[str] = field(default=None)
     ln_to_weight: Dict[str, float] = field(default_factory=lambda:   {"rank": 1.0, "commit": 1.0, "reg": 0.2}) # {"rank": 1.0, "reg": 0.002} | {"rank": 1.0, "commit": 1.0, "reg": 0.002} | {"rank": 1.0, "commit": 1.0} | {"rank": 1.0}
     multi_weights: Optional[List] = field(default=None)
@@ -79,7 +78,7 @@ class Arguments:
 
     def __post_init__(self):
         self.output_dir = os.path.join(self.output_dir, self.run_name, "checkpoint")
-        if self.local_rank <= 0:
+        if int(os.environ['LOCAL_RANK']) <= 0:
             os.makedirs(self.output_dir, exist_ok=True)
 
         if isinstance(self.task_names, list):

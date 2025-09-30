@@ -440,7 +440,7 @@ def sparse_index(args):
     config = {
         "index_dir": args.index_dir
     }
-    evaluator = SparseIndexing(model=model, config=config, compute_stats=True, device=args.local_rank if args.local_rank != -1 else 0)
+    evaluator = SparseIndexing(model=model, config=config, compute_stats=True, device=int(os.environ['LOCAL_RANK']) if int(os.environ['LOCAL_RANK']) != -1 else 0)
     evaluator.index(d_loader)
 
 def sparse_retrieve_and_evaluate(args):
@@ -477,7 +477,7 @@ def sparse_retrieve_and_evaluate(args):
                                             max_length=args.max_length, batch_size=batch_size,
                                             shuffle=False, num_workers=1)
         evaluator = SparseRetrieval(config=config, model=model, dataset_name=get_dataset_name(data_dir),
-                                    compute_stats=True, dim_voc=model.output_dim, device=args.local_rank if args.local_rank != -1 else 0)
+                                    compute_stats=True, dim_voc=model.output_dim, device=int(os.environ['LOCAL_RANK']) if int(os.environ['LOCAL_RANK']) != -1 else 0)
         evaluator.retrieve(q_loader, top_k=args.topk, threshold=args.splade_threshold)
 
     evaluate(args)
@@ -627,7 +627,7 @@ def term_encoder_parallel_retrieve(args):
     else:
         raise ValueError("model architecture: {} is not predefined".format(model_config["architectures"][0]))
     
-    device = args.local_rank
+    device = int(os.environ['LOCAL_RANK'])
     model.eval()
     model.to(device)
 
@@ -657,7 +657,7 @@ def term_encoder_parallel_retrieve(args):
                                             shuffle=False, num_workers=1,
                                             sampler=DistributedSampler(q_collection, shuffle=False))
         retriever.retrieve(q_loader, docid_to_smtids, args.topk, out_dir=os.path.join(args.out_dir, get_dataset_name(data_dir)),
-                           run_name=f"run_{args.local_rank}.json")
+                           run_name=f"run_{int(os.environ['LOCAL_RANK'])}.json")
     
     #evaluate(args)
 
@@ -702,10 +702,10 @@ def index(args):
     ddp_setup()
 
     # parallel initialiaztion
-    assert args.local_rank != -1
+    assert int(os.environ['LOCAL_RANK']) != -1
     model = T5DenseEncoder.from_pretrained(args.pretrained_path)
-    model.to(args.local_rank)
-    model = DDP(model, device_ids=[args.local_rank], output_device=args.local_rank)
+    model.to(int(os.environ['LOCAL_RANK']))
+    model = DDP(model, device_ids=[int(os.environ['LOCAL_RANK'])], output_device=int(os.environ['LOCAL_RANK']))
 
     d_collection = CollectionDatasetPreLoad(data_dir=args.collection_path, id_style="row_id")
     d_loader = T5DenseCollectionDataLoader(dataset=d_collection, tokenizer_type=args.pretrained_path,
@@ -714,7 +714,7 @@ def index(args):
                                     num_workers=1,
                                 sampler=DistributedSampler(d_collection, shuffle=False))
     evaluator = DenseIndexing(model=model, args=args)
-    evaluator.store_embs(d_loader, args.local_rank, use_fp16=False)
+    evaluator.store_embs(d_loader, int(os.environ['LOCAL_RANK']), use_fp16=False)
     
     destroy_process_group()
 
@@ -724,10 +724,10 @@ def index_2(args):
 def lexical_ripor_dense_index(args):
     ddp_setup()
 
-    assert args.local_rank != -1
+    assert int(os.environ['LOCAL_RANK']) != -1
     model = LexicalRiporForDensePretrained.from_pretrained(args.pretrained_path)
-    model.to(args.local_rank)
-    model = DDP(model, device_ids=[args.local_rank], output_device=args.local_rank)
+    model.to(int(os.environ['LOCAL_RANK']))
+    model = DDP(model, device_ids=[int(os.environ['LOCAL_RANK'])], output_device=int(os.environ['LOCAL_RANK']))
 
     d_collection = CollectionDatasetPreLoad(data_dir=args.collection_path, id_style="row_id")
     d_loader = LexicalRiporDenseCollectionDataLoader(dataset=d_collection, tokenizer_type=args.pretrained_path,
@@ -736,7 +736,7 @@ def lexical_ripor_dense_index(args):
                                     num_workers=1,
                                 sampler=DistributedSampler(d_collection, shuffle=False))
     evaluator = DenseIndexing(model=model, args=args)
-    evaluator.store_embs(d_loader, args.local_rank, use_fp16=False)
+    evaluator.store_embs(d_loader, int(os.environ['LOCAL_RANK']), use_fp16=False)
     
     destroy_process_group()
 
@@ -885,7 +885,7 @@ def constrained_beam_search_for_qid_rankdata(args):
     max_new_token = args.max_new_token_for_docid
     assert len(sid.split("_")) == max_new_token, (sid, max_new_token)
 
-    if args.local_rank <= 0:
+    if int(os.environ['LOCAL_RANK']) <= 0:
         print("distribution of docids length per smtid: ", 
               np.quantile([len(xs) for xs in smtid_to_docids.values()], [0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0]))
         print("avergen length = {:.3f}".format(np.mean([len(xs) for xs in smtid_to_docids.values()])))
@@ -915,7 +915,7 @@ def constrained_beam_search_for_qid_rankdata(args):
                                                     num_workers=1,
                                                     sampler=DistributedSampler(dev_dataset, shuffle=False))
 
-        model.to(args.local_rank)
+        model.to(int(os.environ['LOCAL_RANK']))
         if args.get_qid_smtid_rankdata:
             out_dir = args.out_dir
         else:
@@ -932,9 +932,9 @@ def constrained_beam_search_for_qid_rankdata(args):
                             prefixer,
                             smtid_to_docids,
                             max_new_token,
-                            device=args.local_rank, 
+                            device=int(os.environ['LOCAL_RANK']),
                             out_dir=out_dir,
-                            local_rank=args.local_rank,
+                            local_rank=int(os.environ['LOCAL_RANK']),
                             topk=args.topk,
                             get_qid_smtid_rankdata=args.get_qid_smtid_rankdata)
 
@@ -971,13 +971,13 @@ def constrained_beam_search_for_qid_rankdata_sub_tokens(args):
     max_new_token = args.max_new_token_for_docid
     assert len(sid.split("_")) == max_new_token, (sid, max_new_token)
 
-    if args.local_rank <= 0:
+    if int(os.environ['LOCAL_RANK']) <= 0:
         print("distribution of docids length per smtid: ", 
               np.quantile([len(xs) for xs in smtid_to_docids.values()], [0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0]))
         print("avergen length = {:.3f}".format(np.mean([len(xs) for xs in smtid_to_docids.values()])))
         print("smtid: ", sid)
 
-    if args.local_rank <= 0:
+    if int(os.environ['LOCAL_RANK']) <= 0:
         if not os.path.exists(args.out_dir):
             os.mkdir(args.out_dir)
 
@@ -1001,12 +1001,12 @@ def constrained_beam_search_for_qid_rankdata_sub_tokens(args):
                                                     num_workers=1,
                                                     sampler=DistributedSampler(dev_dataset, shuffle=False))
 
-        model.to(args.local_rank)
+        model.to(int(os.environ['LOCAL_RANK']))
         if args.get_qid_smtid_rankdata:
             out_dir = args.out_dir
         else:
             out_dir = os.path.join(args.out_dir, get_dataset_name(data_dir))
-        print("out_dir: ", out_dir, args.local_rank)
+        print("out_dir: ", out_dir, int(os.environ['LOCAL_RANK']))
         
         os.makedirs(out_dir, exist_ok=True)
 
@@ -1016,9 +1016,9 @@ def constrained_beam_search_for_qid_rankdata_sub_tokens(args):
                             prefixer,
                             smtid_to_docids,
                             max_new_token,
-                            device=args.local_rank, 
+                            device=int(os.environ['LOCAL_RANK']),
                             out_dir=out_dir,
-                            local_rank=args.local_rank,
+                            local_rank=int(os.environ['LOCAL_RANK']),
                             topk=args.topk,
                             get_qid_smtid_rankdata=args.get_qid_smtid_rankdata)
 
@@ -1181,7 +1181,7 @@ def lexical_ripor_retrieve_parallel(args):
     # initialize model
     model = LexicalRipor.from_pretrained(args.pretrained_path)
     model.eval()
-    device = args.local_rank
+    device = int(os.environ['LOCAL_RANK'])
     model.to(device)
     model.base_model.mode = "lex_retrieval"
 
@@ -1205,7 +1205,7 @@ def lexical_ripor_retrieve_parallel(args):
                                             shuffle=False, num_workers=1,
                                             sampler=DistributedSampler(q_collection, shuffle=False)) 
         retriever.retrieve(q_loader, lex_docid_to_smtids, args.topk, out_dir=os.path.join(args.lex_out_dir, get_dataset_name(data_dir)),
-                           run_name=f"run_{args.local_rank}.json")
+                           run_name=f"run_{int(os.environ['LOCAL_RANK'])}.json")
 
 
 def lexical_ripor_for_dense_pretrained_retrieve_and_rerank(args):
@@ -1371,7 +1371,7 @@ def lexical_constrained_retrieve_and_rerank_2(args):
     # read model 
     model = LexicalRipor.from_pretrained(args.pretrained_path)
     model.eval()
-    device = args.local_rank #"cpu"
+    device = int(os.environ['LOCAL_RANK']) #"cpu"
     model.to(device)
     model.base_model.mode = "smt_retrieval"
     tokenizer = AutoTokenizer.from_pretrained(args.pretrained_path)
@@ -1396,7 +1396,7 @@ def lexical_constrained_retrieve_and_rerank_2(args):
     max_new_token = args.max_new_token_for_docid
     assert len(sid.split("_")) == max_new_token, (sid, max_new_token)
 
-    if args.local_rank <= 0:
+    if int(os.environ['LOCAL_RANK']) <= 0:
         print("distribution of docids length per smtid: ", 
               np.quantile([len(xs) for xs in smtid_to_docids.values()], [0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0]))
         print("avergen length = {:.3f}".format(np.mean([len(xs) for xs in smtid_to_docids.values()])))

@@ -35,7 +35,7 @@ def main():
     model_args, args = parser.parse_args_into_dataclasses()
 
     # save args to disk 
-    if args.local_rank <= 0:
+    if int(os.environ['LOCAL_RANK']) <= 0:
         merged_args = {**asdict(model_args), **asdict(args)}
         out_dir = deepcopy(args.output_dir)
         if not os.path.exists(out_dir):
@@ -47,7 +47,7 @@ def main():
     eval_dataset = None 
     eval_collator = None
     if args.model_type == "t5_docid_gen_encoder":
-        if args.local_rank <= 0:
+        if int(os.environ['LOCAL_RANK']) <= 0:
             print(f"apply t5_docid_gen_encoder for data, model_name_or_path: {model_args.model_name_or_path}")
 
         if args.loss_type == "t5seq_pretrain_margin_mse":
@@ -81,7 +81,7 @@ def main():
         raise NotImplementedError
     
     if args.model_type == "t5_docid_gen_encoder":
-        if args.local_rank <= 0:
+        if int(os.environ['LOCAL_RANK']) <= 0:
             print(f"apply t5_docid_gen_encoder for model , model_name_or_path: {model_args.model_name_or_path}")
         if args.pretrained_path:
             if args.loss_type == "t5seq_pretrain_margin_mse":
@@ -94,7 +94,7 @@ def main():
                 model = T5SeqAQEncoderForLngKnpMarginMSE.from_pretrained(args.pretrained_path)
             else:
                 raise NotImplementedError
-            if args.local_rank <= 0:
+            if int(os.environ['LOCAL_RANK']) <= 0:
                 print("load model from pretrained path = {}".format(args.pretrained_path))
                 print("model: ", args.loss_type, "model_args: ", model_args if model_args is not None else "not use")
         else:
@@ -102,13 +102,13 @@ def main():
                 model = T5SeqPretrainEncoder(model_args.model_name_or_path)
             else:
                 raise NotImplementedError
-            if args.local_rank <= 0:
+            if int(os.environ['LOCAL_RANK']) <= 0:
                 print("load model from scratch with model_name_or_path = {}".format(model_args.model_name_or_path))
                 print("model: ", args.loss_type, "model_args: ", model_args if model_args is not None else "not use")
     else:
         raise NotImplementedError
 
-    if args.local_rank <= 0:
+    if int(os.environ['LOCAL_RANK']) <= 0:
         print("sanity check dataloader: ")
         dataloader = DataLoader(train_dataset, batch_size=args.per_device_train_batch_size, shuffle=False, collate_fn=train_collator)
         for i, batch in enumerate(dataloader):
@@ -156,12 +156,12 @@ def main():
     else:
         raise NotImplementedError
 
-    if training_args.local_rank <= 0:  # only on main process
+    if training_int(os.environ['LOCAL_RANK']) <= 0:  # only on main process
         wandb.login()
         wandb.init(project=args.wandb_project_name, name=args.run_name)
 
     #print(training_args.eval_steps, training_args.do_eval, eval_dataset)
-    if args.local_rank <= 0:
+    if int(os.environ['LOCAL_RANK']) <= 0:
         print("docid_to_smtids_path: ", args.docid_to_smtid_path)
         print("pretrained_path: ", args.pretrained_path)
     if args.model_type in ["t5_docid_gen_encoder"]:

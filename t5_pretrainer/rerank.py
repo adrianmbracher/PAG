@@ -42,8 +42,8 @@ def rerank_for_create_trainset(args):
     ddp_setup()
     print("model_name_or_path: ", args.model_name_or_path)
     model = CrossEncoder(args.model_name_or_path)
-    model.to(args.local_rank)
-    model = DDP(model, device_ids=[args.local_rank], output_device=args.local_rank)
+    model.to(int(os.environ['LOCAL_RANK']))
+    model = DDP(model, device_ids=[int(os.environ['LOCAL_RANK'])], output_device=int(os.environ['LOCAL_RANK']))
 
     #assert len(args.run_json_paths) == 1 and len(args.q_collection_paths) == 1
     run_json_path = args.run_json_path
@@ -57,12 +57,12 @@ def rerank_for_create_trainset(args):
                                     max_length=args.max_length, 
                                     batch_size=args.batch_size,
                                     shuffle=False, num_workers=1,
-                                sampler=DistributedSampler(rerank_dataset) if args.local_rank != -1 else None)
+                                sampler=DistributedSampler(rerank_dataset) if int(os.environ['LOCAL_RANK']) != -1 else None)
     reranker = Reranker(model=model, dataloader=rerank_loader, 
                         config={"out_dir": args.out_dir},
                         write_to_disk=True,
-                        local_rank=args.local_rank)
-    reranker.reranking(name=f"{args.local_rank}", use_fp16=True)
+                        local_rank=int(os.environ['LOCAL_RANK']))
+    reranker.reranking(name=f"{int(os.environ['LOCAL_RANK'])}", use_fp16=True)
 
 def rerank_for_create_trainset_2(args):
     if os.path.exists(os.path.join(args.out_dir, "qid_pids_rerank_scores.train.json")):
@@ -112,7 +112,7 @@ def rerank_for_create_trainset_2(args):
     #print("end write to pickle")
 
 def rerank_for_evaluate_2(args):
-    if args.local_rank <= 0:
+    if int(os.environ['LOCAL_RANK']) <= 0:
         if not os.path.exists(args.out_dir):
             os.mkdir(args.out_dir)
     if os.path.exists(os.path.join(args.out_dir, "qid_to_rerank_data.json")):
@@ -159,8 +159,8 @@ def rerank_for_evaluate_2(args):
 def assign_scores_for_pseudo_queries(args):
     ddp_setup()
     model = CrossEncoder(args.model_name_or_path)
-    model.to(args.local_rank)
-    model = DDP(model, device_ids=[args.local_rank], output_device=args.local_rank)
+    model.to(int(os.environ['LOCAL_RANK']))
+    model = DDP(model, device_ids=[int(os.environ['LOCAL_RANK'])], output_device=int(os.environ['LOCAL_RANK']))
 
     dataset = PseudoQueryForScoreDataset(document_dir=args.collection_path, pseudo_queries_path=args.pseudo_queries_path, 
                                         docid_pseudo_qids_path=args.docid_pseudo_qids_path)
@@ -169,14 +169,14 @@ def assign_scores_for_pseudo_queries(args):
                                     max_length=args.max_length, 
                                     batch_size=args.batch_size,
                                     shuffle=False, num_workers=1,
-                                sampler=DistributedSampler(dataset) if args.local_rank != -1 else None)
+                                sampler=DistributedSampler(dataset) if int(os.environ['LOCAL_RANK']) != -1 else None)
     reranker = Reranker(model=model, dataloader=dataloader, 
                         config={"out_dir": args.out_dir},
                         write_to_disk=True,
-                        local_rank=args.local_rank)
+                        local_rank=int(os.environ['LOCAL_RANK']))
     #partition = args.docid_pseudo_qids_path.split(".")[0].split("_")[-1]
-    #reranker.assign_scores_for_pseudo_queries(name=f"{partition}_{args.local_rank}", use_fp16=True)
-    reranker.assign_scores_for_pseudo_queries(name=f"{args.local_rank}", use_fp16=True)
+    #reranker.assign_scores_for_pseudo_queries(name=f"{partition}_{int(os.environ['LOCAL_RANK'])}", use_fp16=True)
+    reranker.assign_scores_for_pseudo_queries(name=f"{int(os.environ['LOCAL_RANK'])}", use_fp16=True)
 
 def assign_scores_for_pseudo_queries_2(args):
     sub_rerank_paths = [p for p in os.listdir(args.out_dir) if "pid_qids_rerank_scores" in p]
@@ -221,7 +221,7 @@ def query_to_docid_rerank_for_qid_smtids(args):
                                     max_length=args.max_length, 
                                     batch_size=args.batch_size,
                                     shuffle=False, num_workers=1,
-                                    sampler=DistributedSampler(dataset) if args.local_rank != -1 else None)
+                                    sampler=DistributedSampler(dataset) if int(os.environ['LOCAL_RANK']) != -1 else None)
     # debug 
     """
     for i, batch in enumerate(dataloader):
@@ -244,15 +244,15 @@ def query_to_docid_rerank_for_qid_smtids(args):
         
     
     model = T5SeqQueryToDocidEncoder.from_pretrained(args.pretrained_path)
-    model.to(args.local_rank)
-    model = DDP(model, device_ids=[args.local_rank], output_device=args.local_rank)
+    model.to(int(os.environ['LOCAL_RANK']))
+    model = DDP(model, device_ids=[int(os.environ['LOCAL_RANK'])], output_device=int(os.environ['LOCAL_RANK']))
 
     reranker = Reranker(model=model, dataloader=dataloader, 
                         config={"out_dir": args.out_dir},
                         write_to_disk=True,
-                        local_rank=args.local_rank)
+                        local_rank=int(os.environ['LOCAL_RANK']))
     
-    reranker.query_to_smtid_reranking(name=f"{args.local_rank}", use_fp16=False)
+    reranker.query_to_smtid_reranking(name=f"{int(os.environ['LOCAL_RANK'])}", use_fp16=False)
 
 def query_to_docid_rerank_for_qid_smtids_2(args):
     if os.path.exists(os.path.join(args.out_dir, "qid_smtids_rerank.json")):
@@ -313,8 +313,8 @@ def query_to_docid_rerank_for_qid_smtids_2(args):
 def teacher_rerank_for_qid_smtids(args):
     ddp_setup()
     model = CrossEncoder(args.model_name_or_path)
-    model.to(args.local_rank)
-    model = DDP(model, device_ids=[args.local_rank], output_device=args.local_rank)
+    model.to(int(os.environ['LOCAL_RANK']))
+    model = DDP(model, device_ids=[int(os.environ['LOCAL_RANK'])], output_device=int(os.environ['LOCAL_RANK']))
 
     rerank_dataset = TeacherRerankFromQidSmtidsDataset(
         qid_smtid_rank_path=args.qid_smtid_rank_path,
@@ -327,14 +327,14 @@ def teacher_rerank_for_qid_smtids(args):
                                     max_length=args.max_length, 
                                     batch_size=args.batch_size,
                                     shuffle=False, num_workers=1,
-                                sampler=DistributedSampler(rerank_dataset) if args.local_rank != -1 else None)
+                                sampler=DistributedSampler(rerank_dataset) if int(os.environ['LOCAL_RANK']) != -1 else None)
 
     assert args.out_dir in args.qid_smtid_rank_path, (args.out_dir, args.qid_smtid_rank_path)
     reranker = Reranker(model=model, dataloader=rerank_loader, 
                         config={"out_dir": args.out_dir},
                         write_to_disk=True,
-                        local_rank=args.local_rank)
-    reranker.reranking(name=f"teacher_{args.local_rank}", use_fp16=True)
+                        local_rank=int(os.environ['LOCAL_RANK']))
+    reranker.reranking(name=f"teacher_{int(os.environ['LOCAL_RANK'])}", use_fp16=True)
 
 def teacher_rerank_for_qid_smtids_2(args):
     if os.path.exists(os.path.join(args.out_dir, "rerank_teacher.json")):
@@ -368,10 +368,10 @@ def teacher_rerank_for_qid_smtids_2(args):
 def cross_encoder_rerank_for_same_prefix_docid(args):
     ddp_setup()
     model = CrossEncoder(args.model_name_or_path)
-    model.to(args.local_rank)
-    model = DDP(model, device_ids=[args.local_rank], output_device=args.local_rank)
+    model.to(int(os.environ['LOCAL_RANK']))
+    model = DDP(model, device_ids=[int(os.environ['LOCAL_RANK'])], output_device=int(os.environ['LOCAL_RANK']))
 
-    if args.local_rank <= 0:
+    if int(os.environ['LOCAL_RANK']) <= 0:
         if not os.path.exists(args.out_dir):
             os.mkdir(args.out_dir)
 
@@ -406,7 +406,7 @@ def cross_encoder_rerank_for_same_prefix_docid(args):
     qid_to_smtid_to_docids = {}
     for i, qid in enumerate(qid_to_reldocids):
         qid_to_smtid_to_reldocids[qid] = {}
-        if i % get_world_size() == args.local_rank:
+        if i % get_world_size() == int(os.environ['LOCAL_RANK']):
             qid_to_smtid_to_docids[qid] = {}
         for reldocid in qid_to_reldocids[qid]:
             smtid = docid_to_smtid[reldocid]
@@ -415,14 +415,14 @@ def cross_encoder_rerank_for_same_prefix_docid(args):
             else:
                 qid_to_smtid_to_reldocids[qid][smtid].append(reldocid)
 
-            if i % get_world_size() == args.local_rank:
+            if i % get_world_size() == int(os.environ['LOCAL_RANK']):
                 neg_docids = random.sample(smtid_to_docids[smtid], k=min(50, len(smtid_to_docids[smtid])))
                 if smtid not in qid_to_smtid_to_docids[qid]:
                     qid_to_smtid_to_docids[qid] = {smtid: neg_docids} #{smtid: smtid_to_docids[smtid]}
                 else:
                     qid_to_smtid_to_docids[qid][smtid] = neg_docids #smtid_to_docids[smtid]
 
-    print("number of gpus = {}, current rank = {}".format(get_world_size(), args.local_rank))
+    print("number of gpus = {}, current rank = {}".format(get_world_size(), int(os.environ['LOCAL_RANK'])))
     print("length of qid_to_smtid_to_reldocids = {}, qid_to_smtid_to_docids = {}, ratio = {:.3f}".format(
         len(qid_to_smtid_to_reldocids), len(qid_to_smtid_to_docids), len(qid_to_smtid_to_reldocids) / len(qid_to_smtid_to_docids)
     ))
@@ -434,12 +434,12 @@ def cross_encoder_rerank_for_same_prefix_docid(args):
                                             max_length=args.max_length, 
                                             batch_size=args.batch_size,
                                             shuffle=False, num_workers=1) # we sub-sample qid_to_reldocids here, so we don't need DistributedSampler
-                                        #sampler=DistributedSampler(rerank_dataset) if args.local_rank != -1 else None)
+                                        #sampler=DistributedSampler(rerank_dataset) if int(os.environ['LOCAL_RANK']) != -1 else None)
     reranker = Reranker(model=model, dataloader=rerank_loader, 
                         config={"out_dir": args.out_dir},
                         write_to_disk=True,
-                        local_rank=args.local_rank)
-    reranker.reranking_for_same_prefix_pair(name=f"{args.local_rank}", use_fp16=True)
+                        local_rank=int(os.environ['LOCAL_RANK']))
+    reranker.reranking_for_same_prefix_pair(name=f"{int(os.environ['LOCAL_RANK'])}", use_fp16=True)
 
 def cross_encoder_rerank_for_same_prefix_docid_2(args):
     if os.path.exists(os.path.join(args.out_dir, "qid_to_smtid_to_rerank.json")):
@@ -499,10 +499,10 @@ def cross_encoder_rerank_for_same_prefix_docid_2(args):
 def cross_encoder_rerank_for_same_reldocid_hard_docids(args):
     ddp_setup()
     model = CrossEncoder(args.model_name_or_path)
-    model.to(args.local_rank)
-    model = DDP(model, device_ids=[args.local_rank], output_device=args.local_rank)
+    model.to(int(os.environ['LOCAL_RANK']))
+    model = DDP(model, device_ids=[int(os.environ['LOCAL_RANK'])], output_device=int(os.environ['LOCAL_RANK']))
 
-    if args.local_rank <= 0:
+    if int(os.environ['LOCAL_RANK']) <= 0:
         if not os.path.exists(args.out_dir):
             os.mkdir(args.out_dir)
 
@@ -511,7 +511,7 @@ def cross_encoder_rerank_for_same_reldocid_hard_docids(args):
     
     sampled_data = {}
     for i, qid in enumerate(qid_to_reldocid_hard_docids):
-        if i % get_world_size() == args.local_rank:
+        if i % get_world_size() == int(os.environ['LOCAL_RANK']):
             sampled_data[qid] = qid_to_reldocid_hard_docids[qid]
     print("size of sampled_data = {}, original data = {}, ratio = {:.3f}".format(
         len(sampled_data), len(qid_to_reldocid_hard_docids), len(qid_to_reldocid_hard_docids) / len(sampled_data)
@@ -524,12 +524,12 @@ def cross_encoder_rerank_for_same_reldocid_hard_docids(args):
                                             max_length=args.max_length, 
                                             batch_size=args.batch_size,
                                             shuffle=False, num_workers=1)
-                                            #sampler=DistributedSampler(rerank_dataset) if args.local_rank != -1 else None)
+                                            #sampler=DistributedSampler(rerank_dataset) if int(os.environ['LOCAL_RANK']) != -1 else None)
     reranker = Reranker(model=model, dataloader=rerank_loader, 
                         config={"out_dir": args.out_dir},
                         write_to_disk=True,
-                        local_rank=args.local_rank)
-    reranker.reranking_for_same_prefix_pair(name=f"{args.local_rank}", use_fp16=True, prefix_name="qid_to_reldocid_to_hard_rerank")
+                        local_rank=int(os.environ['LOCAL_RANK']))
+    reranker.reranking_for_same_prefix_pair(name=f"{int(os.environ['LOCAL_RANK'])}", use_fp16=True, prefix_name="qid_to_reldocid_to_hard_rerank")
 
 def cross_encoder_rerank_for_same_reldocid_hard_docids_2(args):
     if os.path.exists(os.path.join(args.out_dir, "qid_to_reldocid_to_hard_rerank.json")):
@@ -588,7 +588,7 @@ def cross_encoder_rerank_for_qid_smtid_docids(args):
     ddp_setup()
     print("model_name_or_path for cross_encoder: ", args.model_name_or_path)
     model = CrossEncoder(args.model_name_or_path)
-    model.to(args.local_rank)
+    model.to(int(os.environ['LOCAL_RANK']))
 
     with open(args.qid_smtid_docids_path) as fin:
         qid_to_smtid_to_docids = ujson.load(fin)
@@ -596,7 +596,7 @@ def cross_encoder_rerank_for_qid_smtid_docids(args):
 
     sampled_data = {}
     for i, qid in enumerate(qid_to_smtid_to_docids):
-        if i % get_world_size() == args.local_rank:
+        if i % get_world_size() == int(os.environ['LOCAL_RANK']):
             sampled_data[qid] = qid_to_smtid_to_docids[qid]
     print("size of sampled_data = {}, original data = {}, ratio = {:.3f}".format(
         len(sampled_data), len(qid_to_smtid_to_docids), len(qid_to_smtid_to_docids) / len(sampled_data)
@@ -612,13 +612,13 @@ def cross_encoder_rerank_for_qid_smtid_docids(args):
                                             shuffle=False, num_workers=1)
     reranker = Reranker(model=model, dataloader=rerank_loader, 
                         config=None,
-                        local_rank=args.local_rank,
+                        local_rank=int(os.environ['LOCAL_RANK']),
                         write_to_disk=False)
     
     qid_to_smtid_to_rankdata = reranker.reranking_for_same_prefix_pair(use_fp16=True)
 
     path_prefix = args.qid_smtid_docids_path.split(".")[0]
-    out_path = path_prefix + f"_teacher_score_{args.local_rank}.train.json"
+    out_path = path_prefix + f"_teacher_score_{int(os.environ['LOCAL_RANK'])}.train.json"
     with open(out_path, "w") as fout:
         ujson.dump(qid_to_smtid_to_rankdata, fout)
     

@@ -506,7 +506,7 @@ class SparseIndexing:
 
         if torch.distributed.is_initialized():
             self.world_size = get_world_size()
-            print("world_size: {}, local_rank: {}".format(self.world_size, self.local_rank))
+            print("world_size: {}, local_rank: {}".format(self.world_size, int(os.environ['LOCAL_RANK'])))
         else:
             self.world_size = None
 
@@ -518,7 +518,7 @@ class SparseIndexing:
 
         count = 0
         with torch.no_grad():
-            for t, batch in enumerate(tqdm(collection_loader, total=len(collection_loader), disable=self.local_rank >= 1)):
+            for t, batch in enumerate(tqdm(collection_loader, total=len(collection_loader), disable=int(os.environ['LOCAL_RANK']) >= 1)):
                 inputs = {k: v.to(self.device) for k, v in batch.items() if k not in {"id"}}
                 batch_documents = self.model.encode(**inputs) #[bz, vocab_size]
                 if self.compute_stats:
@@ -529,7 +529,7 @@ class SparseIndexing:
                 # to let each process having a unique row_id
                 new_row = []
                 for r in row.cpu().numpy():
-                    new_row.append((count + r)*self.world_size + self.local_rank)
+                    new_row.append((count + r)*self.world_size + int(os.environ['LOCAL_RANK']))
                 row = np.array(new_row)
 
                 # update doc_ids map
